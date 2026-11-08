@@ -1282,7 +1282,7 @@ describe("dsh provider status", () => {
     const status = await statusFor("/opt/missing-dsh", probe(""));
     assert.equal(status.available, false);
     assert.match(status.diagnostic ?? "", /\/opt\/missing-dsh --version/);
-    assert.match(status.diagnostic ?? "", /agents\.providers\.dsh-pi\.command/);
+    assert.match(status.diagnostic ?? "", /agents\.providers\.dsh\.command/);
     assert.match(status.diagnostic ?? "", /PASEO_DSH_EXECUTABLE/);
     assert.match(status.diagnostic ?? "", /plugin settings/);
   });

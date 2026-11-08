@@ -1,6 +1,6 @@
 # Alpha 验收规范
 
-首版 alpha 的验收对象是本机 Paseo 中的 `dsh-pi` Direct Provider，以及它启动的 `paseo` profile。版本配对见 [兼容性说明](compatibility.md)。
+首版 alpha 的验收对象是本机 Paseo 中的 `dsh` Direct Provider，以及它启动的 `paseo` profile。版本配对见 [兼容性说明](compatibility.md)。
 
 ## 数据与配置边界
 
@@ -14,7 +14,7 @@
 
 | 场景 | 通过标准 |
 |---|---|
-| 安装与注册 | 本地安装成功，插件状态正常，Paseo 可发现 `dsh-pi` Provider |
+| 安装与注册 | 本地安装成功，插件状态正常，Paseo 可发现 `dsh` Provider |
 | 配置与历史 | 缺失时自动创建 `paseo` profile，已存在时直接使用；可选择并读取原生历史会话，恢复后的提示词沿用同一会话 |
 | 文本与思考 | 流式文本与思考保留原文、缩进和重复空白；相邻分片合并显示，不产生逐 token 气泡，定稿不重复追加已显示文本 |
 | 工具与审批 | 工具开始、完成、失败可见；审批允许或拒绝都能结束等待 |

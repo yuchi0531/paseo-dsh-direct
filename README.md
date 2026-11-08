@@ -46,7 +46,7 @@ Create a conversation with the **DeepSeek Harness** provider. Models and presets
 
 The provider supports streamed assistant and reasoning output, tool execution and approval, user questions, model/preset configuration, interruption, and session recovery. It starts DSH with its own `paseo` profile and does not modify Paseo or DSH core.
 
-The plugin uses the DSH profile `paseo`. On first start it creates that profile from DSH's official `web` template (`~/.dsh/profiles/paseo`, or under `$DSH_HOME` when set). Model routes, the default model, and permission presets go in `~/.dsh/profiles/paseo/cordis.patch.yml`. The executable and the profile can be set on the **DeepSeek Harness** screen in Paseo's settings (fields `dsh executable` and `dsh profile`). The executable is chosen in this order: `PASEO_DSH_EXECUTABLE`, the settings screen, `agents.providers.dsh-pi.command` in the Paseo configuration, then `dsh` on `PATH`. The profile is chosen from `PASEO_DSH_PROFILE`, then the settings screen, then `paseo`; a profile named explicitly is not created automatically. Changed settings apply to new sessions; running sessions keep their `dsh`. If the Paseo Daemon has plugin loading disabled, enable `pluginsEnabled` in its configuration before installing the plugin.
+The plugin uses the DSH profile `paseo`. On first start it creates that profile from DSH's official `web` template (`~/.dsh/profiles/paseo`, or under `$DSH_HOME` when set). Model routes, the default model, and permission presets go in `~/.dsh/profiles/paseo/cordis.patch.yml`. The executable and the profile can be set on the **DeepSeek Harness** screen in Paseo's settings (fields `dsh executable` and `dsh profile`). The executable is chosen in this order: `PASEO_DSH_EXECUTABLE`, the settings screen, `agents.providers.dsh.command` in the Paseo configuration, then `dsh` on `PATH`. The profile is chosen from `PASEO_DSH_PROFILE`, then the settings screen, then `paseo`; a profile named explicitly is not created automatically. Changed settings apply to new sessions; running sessions keep their `dsh`. If the Paseo Daemon has plugin loading disabled, enable `pluginsEnabled` in its configuration before installing the plugin.
 
 The **Subagent models** section on that settings screen lets you search models by name or provider, select individual models, select all, clear the list, or disable model selection. On first initialization, the plugin selects all currently available models and saves the choice in the DSH profile. Existing choices, including an explicit disabled setting, are preserved; newly added models require selection. Changes apply to new sessions with a supported preset. See [settings behavior](docs/client-architecture.md#设置页).
 
@@ -63,7 +63,7 @@ npm ci
 npm run build
 paseo plugin install "$PWD"
 paseo plugin ls
-paseo provider models dsh-pi
+paseo provider models dsh
 ```
 
 The same local source can be installed directly with `paseo plugin install /absolute/path/to/paseo-dsh-direct` after building. The CLI also accepts a Git ref that the Settings UI cannot:

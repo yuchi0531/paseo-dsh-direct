@@ -122,7 +122,7 @@ interface SessionState {
 
 export function createDshProvider(options: DshProviderOptions): ProviderRegistration {
   return {
-    id: "dsh-pi",
+    id: "dsh",
     label: "DeepSeek Harness",
     description: "Direct connection to the local DeepSeek Harness (dsh)",
     icon: "dsh.svg",
@@ -131,7 +131,7 @@ export function createDshProvider(options: DshProviderOptions): ProviderRegistra
       const configured = (await options.configured?.()) ?? {};
       const launch = describeDshLaunch(resolveDshLaunch(configured.executable, request.launch));
       const scope = request.scope === "workspace" ? request.cwd : "global";
-      return JSON.stringify(["dsh-pi", scope, launch, configured.profile ?? DEFAULT_PROFILE]);
+      return JSON.stringify(["dsh", scope, launch, configured.profile ?? DEFAULT_PROFILE]);
     },
     command: [options.command ?? "dsh"],
     async status(request) {
@@ -183,7 +183,7 @@ async function dshStatus(
       available: false,
       diagnostic:
         `Could not run "${describeDshLaunch(launch)} --version". Install dsh, ` +
-        `set agents.providers.dsh-pi.command in Paseo config, set the executable in the DeepSeek Harness plugin settings, or set PASEO_DSH_EXECUTABLE, ` +
+        `set agents.providers.dsh.command in Paseo config, set the executable in the DeepSeek Harness plugin settings, or set PASEO_DSH_EXECUTABLE, ` +
         `then restart the Paseo daemon.`,
     };
   }

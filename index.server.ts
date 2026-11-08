@@ -22,8 +22,8 @@ export default function contribute(server: PluginServerContext) {
   });
   // Provider discovery supplies the same resolved command and environment used for sessions.
   const refreshLaunch = async (paseo: import("@getpaseo/client").PaseoApi) => {
-    await paseo.providers.refresh({ providers: ["dsh-pi"] });
-    const result = await paseo.providers.listModels("dsh-pi");
+    await paseo.providers.refresh({ providers: ["dsh"] });
+    const result = await paseo.providers.listModels("dsh");
     if (result.error) throw new Error(result.error);
   };
   server.handle(readSubagentSettings, async (_input, { paseo }) => {

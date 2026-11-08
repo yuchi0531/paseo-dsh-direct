@@ -34,7 +34,7 @@ For an existing checkout, use `paseo plugin install /absolute/path/to/paseo-dsh-
 
 ```bash
 paseo plugin ls
-paseo provider models dsh-pi
+paseo provider models dsh
 ```
 
 The CLI also accepts a Git ref that the Settings UI field cannot:
@@ -47,7 +47,7 @@ If the Paseo Daemon has plugin loading disabled, set `pluginsEnabled` to `true` 
 
 ## Start a conversation
 
-Select **DeepSeek Harness** when creating a conversation. The provider id is `dsh-pi`; the plugin id is `paseo-dsh-direct`. Models and presets are read from the DSH profile the plugin runs.
+Select **DeepSeek Harness** when creating a conversation. The provider id is `dsh`; the plugin id is `paseo-dsh-direct`. Models and presets are read from the DSH profile the plugin runs.
 
 Existing native DSH sessions are exposed through Paseo's **Import session** flow. Resuming a session keeps its native DSH session id and history. A session held by another DSH client, such as a terminal UI, must be released there first.
 
@@ -63,10 +63,10 @@ Set the executable and profile on the DeepSeek Harness screen in Paseo's setting
 The provider registers `command: ["dsh"]`, so Paseo's own provider configuration can override the executable and its environment without an environment variable:
 
 ```json
-{ "agents": { "providers": { "dsh-pi": { "command": ["/opt/dsh/bin/dsh"], "env": { "DSH_HOME": "/srv/dsh" } } } } }
+{ "agents": { "providers": { "dsh": { "command": ["/opt/dsh/bin/dsh"], "env": { "DSH_HOME": "/srv/dsh" } } } } }
 ```
 
-The executable is chosen in this order: `PASEO_DSH_EXECUTABLE`, then the settings screen, then `agents.providers.dsh-pi.command`, then `dsh` from `PATH`. Restart the Paseo Daemon after changing the environment variable or the Paseo configuration. On Windows, npm's `dsh.cmd` / `dsh.ps1` and the `dsh` that DSH Desktop registers both work. With only DSH Desktop installed, no separate dsh is needed: when `PATH` has no `dsh`, the plugin uses the dsh bundled in Desktop's default install. A `dsh` on `PATH` takes precedence over Desktop.
+The executable is chosen in this order: `PASEO_DSH_EXECUTABLE`, then the settings screen, then `agents.providers.dsh.command`, then `dsh` from `PATH`. Restart the Paseo Daemon after changing the environment variable or the Paseo configuration. On Windows, npm's `dsh.cmd` / `dsh.ps1` and the `dsh` that DSH Desktop registers both work. With only DSH Desktop installed, no separate dsh is needed: when `PATH` has no `dsh`, the plugin uses the dsh bundled in Desktop's default install. A `dsh` on `PATH` takes precedence over Desktop.
 
 The provider exposes streamed assistant and reasoning output, tool execution and approval, user questions, configuration, interruption and persistent session recovery through Paseo's native UI.
 

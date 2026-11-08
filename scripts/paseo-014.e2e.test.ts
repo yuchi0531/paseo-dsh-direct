@@ -91,12 +91,12 @@ test("Paseo 0.14 isolated DSH runtime lifecycle", { skip: !enabled ? "set PASEO_
     assert.equal(plugins.find((p: any) => p.id === "paseo-dsh-direct")?.status, "running", JSON.stringify(plugins));
     assert.equal(plugins.find((p: any) => p.id === "fixture-hooks")?.status, "running", JSON.stringify(plugins));
     t.diagnostic("both plugin subprocesses compiled and running");
-    await client.providers.refresh({ providers: ["dsh-pi"] });
-    const models = await client.providers.listModels("dsh-pi");
+    await client.providers.refresh({ providers: ["dsh"] });
+    const models = await client.providers.listModels("dsh");
     assert.ok(!models.error, models.error);
     const model = models.models.find((m: any) => m.id.includes("fixture"));
     assert.ok(model, JSON.stringify(models));
-    const agent = await client.agents.create({ cwd, title: "isolated fixture", config: { provider: `dsh-pi/${model.id}`, modeId: "standard" } });
+    const agent = await client.agents.create({ cwd, title: "isolated fixture", config: { provider: `dsh/${model.id}`, modeId: "standard" } });
     const run = async (text: string) => {
       const result = await agent.run(text, { timeoutMs: 30_000 });
       assert.equal(result.status, "idle", JSON.stringify(result));

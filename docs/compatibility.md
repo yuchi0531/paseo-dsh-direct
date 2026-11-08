@@ -26,7 +26,7 @@ DSH `0.2.1-rc.4` 的桥接 smoke 已通过：握手、10 个模型、495 条原�
 
 Paseo 验证基线为 `0.14.0`（隔离 Daemon：插件加载、真实回合、空闲安全查询、后台任务否决、回收与恢复）与 `0.12.0`（插件安装、加载、provider 可用性、诊断与模型目录，Daemon 运行于 Node.js `24`），此前的基线 `0.11.2`（Node.js `22`）结论仍有效；回合级验证在 Paseo `0.9.2`、Node.js `24.13.0` 下完成。手机真机界面尚未实测；官方移动客户端使用的 Daemon 接口已验证。
 
-**0.2 线**：在 DSH `0.2.1-rc.2` 下用 `npm run smoke:bridge` 验证了桥接握手、模型/preset 目录与 `session.list`（真实历史 350+ 会话）；该版本包源码里 `compaction/summary` 已写入压缩影子价格、`contextPressure` 投影已带 `projectedTokens`，上下文圆环据此在压缩后即时更新（真实压缩会话未复测）。真实回合由贡献者 @rayzart 在 0.2.7 用 dsh `0.2.1-rc.2` 加 Paseo `0.11.4`（DeepSeek 账号登录）验证：诊断报可用、模型目录可列出、真实回合完成；`/compact`、`/plan` 与真实远端模型下的审批、问答和恢复没有该组合的完整复测记录，Windows 脚本模型验证范围见下文。在 DSH `0.2.0-rc.2` 下验证了握手、目录与 `session.list`，并在 Paseo `0.11.2` 的 Daemon 内验证了：本地目录安装并加载（插件名 `DeepSeek Harness`、图标被接受、插件日志无错误）、`dsh-pi` 列出且可用、模型目录加载；`PASEO_DSH_EXECUTABLE` 指向不存在的路径时，`paseo provider diagnostic dsh-pi` 报告不可用并给出 `Could not run "<path> --version"…` 的说明。`0.2.0-rc.2` 下的真实回合、工具调用、审批、问答、`/compact`、`/plan` 与会话恢复也没有复测。
+**0.2 线**：在 DSH `0.2.1-rc.2` 下用 `npm run smoke:bridge` 验证了桥接握手、模型/preset 目录与 `session.list`（真实历史 350+ 会话）；该版本包源码里 `compaction/summary` 已写入压缩影子价格、`contextPressure` 投影已带 `projectedTokens`，上下文圆环据此在压缩后即时更新（真实压缩会话未复测）。真实回合由贡献者 @rayzart 在 0.2.7 用 dsh `0.2.1-rc.2` 加 Paseo `0.11.4`（DeepSeek 账号登录）验证：诊断报可用、模型目录可列出、真实回合完成；`/compact`、`/plan` 与真实远端模型下的审批、问答和恢复没有该组合的完整复测记录，Windows 脚本模型验证范围见下文。在 DSH `0.2.0-rc.2` 下验证了握手、目录与 `session.list`，并在 Paseo `0.11.2` 的 Daemon 内验证了：本地目录安装并加载（插件名 `DeepSeek Harness`、图标被接受、插件日志无错误）、`dsh` 列出且可用、模型目录加载；`PASEO_DSH_EXECUTABLE` 指向不存在的路径时，`paseo provider diagnostic dsh` 报告不可用并给出 `Could not run "<path> --version"…` 的说明。`0.2.0-rc.2` 下的真实回合、工具调用、审批、问答、`/compact`、`/plan` 与会话恢复也没有复测。
 
 在 DSH `0.2.0-rc.1` 下，用插件真实的 provider 路径（`createDshProvider` + `launchDshBridge`，不经 Paseo Daemon）和真实模型验证了：自动创建 `paseo` profile、模型/preset/权限目录、含 bash 工具调用的真实回合、工具审批允许/拒绝、问答应答/拒绝、斜杠目录含 `/compact` 与 `/plan`、关闭后按持久化句柄恢复会话并继续对话；`npm run smoke:bridge -- --prompt` 通过，DSH 子进程不监听 TCP 端口、不开浏览器。该 `0.2.0-rc.1` 组合没有图片与文件附件、MCP、中断及 Daemon 重启恢复的完整复测记录；其他组合的已验证范围分别列出。
 
@@ -48,9 +48,9 @@ DSH 保持用户原有安装，插件不自动升级或替换它。插件只需�
 
 [paseo-plugin.json](../paseo-plugin.json) 声明 `requirements.paseo: ">=0.11.0"`，开发类型依赖固定为 `@getpaseo/plugin@0.14.0`，可选 peer 依赖 `@getpaseo/client`、`@getpaseo/protocol` 同为 `0.14.0`。最低版本声明是加载条件，不代表所有更高宿主版本均经过测试。清单带 `name` 与 `icon`（均要求 Paseo 0.11.0 及以上）；Paseo 0.8 至 0.10 的用户安装 `npm:paseo-dsh-direct@0.2.1`。
 
-Provider 注册了 `status()`：Paseo 0.11 及以上列出 Provider 时，用 `PASEO_DSH_EXECUTABLE`（未设置则取 `PATH` 里的 `dsh`）运行 `--version`（结果按可执行路径缓存；Paseo 配置了 `agents.providers.dsh-pi.command` 时探测该命令）。`dsh` 无法运行时报告不可用并给出原因；`major.minor` 线与插件不一致时仍报告可用，附带与会话时间线相同的版本线警告。Provider 注册 `command: ["dsh"]`，详见 [服务端架构](server-architecture.md#dsh-的选择)。`paseo-plugin.json` 的 `name` 为 `DeepSeek Harness`，`icon` 指向仓库根的 256x256 透明底 PNG `dsh.png`（由彩色标志 `dsh-logo.svg` 渲染，图形是取自 dsh 网页前端 favicon 的 DeepSeek 鲸鱼，`@deepseek-ai/dsh-web-frontend`，MIT）。Provider 的 `icon` 是 `dsh.svg`，一个用 `currentColor` 的单色图形，因为 Paseo 以主题文字色绘制 provider 图标。
+Provider 注册了 `status()`：Paseo 0.11 及以上列出 Provider 时，用 `PASEO_DSH_EXECUTABLE`（未设置则取 `PATH` 里的 `dsh`）运行 `--version`（结果按可执行路径缓存；Paseo 配置了 `agents.providers.dsh.command` 时探测该命令）。`dsh` 无法运行时报告不可用并给出原因；`major.minor` 线与插件不一致时仍报告可用，附带与会话时间线相同的版本线警告。Provider 注册 `command: ["dsh"]`，详见 [服务端架构](server-architecture.md#dsh-的选择)。`paseo-plugin.json` 的 `name` 为 `DeepSeek Harness`，`icon` 指向仓库根的 256x256 透明底 PNG `dsh.png`（由彩色标志 `dsh-logo.svg` 渲染，图形是取自 dsh 网页前端 favicon 的 DeepSeek 鲸鱼，`@deepseek-ai/dsh-web-frontend`，MIT）。Provider 的 `icon` 是 `dsh.svg`，一个用 `currentColor` 的单色图形，因为 Paseo 以主题文字色绘制 provider 图标。
 
-插件注册 `dsh-pi`，不会覆盖名为 `dsh` 的既有自定义 Provider。
+插件注册 `dsh`，不会覆盖名为 `dsh` 的既有自定义 Provider。
 
 Paseo 0.14 的空闲回收通过协商 `session.can_stop_runtime` 接入。只有 Provider 与 DSH 检查都确认没有待处理工作，才允许宿主释放持久会话运行时；缺少必需检查接口、检查失败或查询期间有新活动时保留进程。旧宿主自动忽略该能力，普通会话沿用原协议。实际关闭仍执行启动期清理与桥接释放，详情见 [空闲运行时回收](server-architecture.md#空闲运行时回收)。
 

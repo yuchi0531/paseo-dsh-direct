@@ -59,7 +59,7 @@
 ## 0.2.7
 
 - The dsh provider works with dsh `0.2.1`. dsh writes some of its own logs to stdout, such as the model-catalog line from a DeepSeek account login, and the bridge used to fail on that line with "DSH bridge wrote invalid JSON". The bridge now forwards any stdout line that is not a JSON object to stderr and keeps reading (contributed by @rayzart in #74).
-- Tested by @rayzart with dsh `0.2.1-rc.2` on Paseo 0.11.4, signed in with a DeepSeek account and no API key: `paseo provider diagnostic dsh-pi` reports the provider available with its models, and a real turn completes. Unit tests cover protocol messages, log lines, truncated JSON and non-object JSON.
+- Tested by @rayzart with dsh `0.2.1-rc.2` on Paseo 0.11.4, signed in with a DeepSeek account and no API key: `paseo provider diagnostic dsh` reports the provider available with its models, and a real turn completes. Unit tests cover protocol messages, log lines, truncated JSON and non-object JSON.
 
 ## 0.2.6
 
@@ -82,7 +82,7 @@
 
 ## 0.2.3
 
-- The provider registers `command: ["dsh"]`, so the Paseo configuration `agents.providers.dsh-pi.command` and `env` choose the dsh executable. `PASEO_DSH_EXECUTABLE` still takes precedence when set; `status()` checks the same executable a session launches.
+- The provider registers `command: ["dsh"]`, so the Paseo configuration `agents.providers.dsh.command` and `env` choose the dsh executable. `PASEO_DSH_EXECUTABLE` still takes precedence when set; `status()` checks the same executable a session launches.
 - Connecting fails with a clear message when the dsh profile lacks a row the plugin disables, or when dsh lacks a service the bridge uses, instead of misbehaving later.
 - An approval and question end-to-end test against real dsh runs when `DEEPSEEK_API_KEY` is set.
 - `OVERVIEW.md` describes the plugin for the Paseo plugin registry, including the dsh subprocess and the environment variables it reads.
@@ -122,6 +122,6 @@
 
 ## 0.1.1
 
-- Dropped the `@xmoon76/dsh-pi-tui` dependency; the plugin now runs its own `paseo` DSH profile instead of injecting into a pi-tui profile.
+- Dropped the `@xmoon76/dsh-tui` dependency; the plugin now runs its own `paseo` DSH profile instead of injecting into a pi-tui profile.
 - Renamed the repository and plugin id to `paseo-dsh-direct`.
 - The plugin's version now tracks the dsh version line (`major.minor`); a mismatched or unconfirmed dsh version shows a warning in the Paseo timeline instead of blocking the session.

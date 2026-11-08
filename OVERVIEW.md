@@ -19,7 +19,7 @@ Runs DeepSeek Harness (`dsh`) as a native Paseo agent provider. Paseo clients (d
 ## Processes and environment
 
 - **Child process.** For each session the plugin starts the `dsh` executable as a child process and loads a small bridge plugin into it. The two communicate over the child's stdio.
-- **Executable lookup.** In order: the `PASEO_DSH_EXECUTABLE` environment variable, the executable field of the DeepSeek Harness settings screen, the Paseo setting `agents.providers.dsh-pi.command`, then `dsh` on `PATH`.
+- **Executable lookup.** In order: the `PASEO_DSH_EXECUTABLE` environment variable, the executable field of the DeepSeek Harness settings screen, the Paseo setting `agents.providers.dsh.command`, then `dsh` on `PATH`.
 - **Profile.** The plugin launches `dsh --profile paseo`. If `<DSH_HOME>/profiles/paseo` does not exist, it is created once by running `dsh --profile paseo --from-default-profile web --dump-config`. `DSH_HOME` defaults to `~/.dsh`. Setting `PASEO_DSH_PROFILE`, or the profile field of the DeepSeek Harness settings screen (the variable wins), selects another existing profile instead; a missing one is reported as an error, not created.
 - **Environment variables read by the plugin.** `PASEO_DSH_EXECUTABLE`, `PASEO_DSH_PROFILE`, and `DSH_HOME` (to locate the profile directory).
 - **Settings screen.** Set the executable and profile, and search or select the models subagents may use. Changes apply to new sessions. When the DSH profile has no explicit subagent model settings, the plugin initially selects all currently available models and persists the choice in that profile. Existing choices are preserved; newly added models require selection. Profiles without writable subagent settings show this feature as unavailable.

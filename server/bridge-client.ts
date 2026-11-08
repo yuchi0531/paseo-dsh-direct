@@ -234,7 +234,7 @@ export interface DshLaunch {
 /**
  * The dsh launch, by precedence: a non-blank configured executable (`PASEO_DSH_EXECUTABLE`,
  * else the plugin setting; see `mergeDshConfigured`), then the `launch` Paseo
- * resolved from `command` / `agents.providers.dsh-pi.command`, then `dsh` from
+ * resolved from `command` / `agents.providers.dsh.command`, then `dsh` from
  * `PATH`. `launch.args` belong to `launch.command`, so they are dropped when
  * the environment variable wins.
  */

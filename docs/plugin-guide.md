@@ -43,12 +43,12 @@ Paseo 编译器检查客户端、服务端和共享模块边界。分层 TypeScr
 ```bash
 paseo plugin install "$PWD"
 paseo plugin ls
-paseo provider models dsh-pi
+paseo provider models dsh
 ```
 
 若已启用的插件仍显示 `disabled`，请在 Paseo 的 `config.json` 中将 `pluginsEnabled` 设为 `true`，然后执行 `paseo daemon reload`。保留配置文件中的其他字段。
 
-插件和 Provider 是两个标识：插件管理使用 `paseo-dsh-direct`，会话操作使用 `dsh-pi`。本地源码更新后重新构建，并执行：
+插件和 Provider 是两个标识：插件管理使用 `paseo-dsh-direct`，会话操作使用 `dsh`。本地源码更新后重新构建，并执行：
 
 ```bash
 paseo plugin reload paseo-dsh-direct
@@ -56,14 +56,14 @@ paseo plugin reload paseo-dsh-direct
 
 Git 与 npm 安装通过 `paseo plugin update paseo-dsh-direct` 更新。安装固定版本时使用已发布的 Git tag 或 commit；本地构建成功不代表远端已存在同名 tag。
 
-重载或激活更新会停止旧插件及其 Provider 连接，当前回合也会中断。若当前 agent 正由 `dsh-pi` 驱动，应从会话外的终端执行更新或重载；持久会话随后可以恢复，但正在执行的工具不能据此视为完成。源码加载用 `paseo plugin reload`，无需为此重启整个 Daemon。
+重载或激活更新会停止旧插件及其 Provider 连接，当前回合也会中断。若当前 agent 正由 `dsh` 驱动，应从会话外的终端执行更新或重载；持久会话随后可以恢复，但正在执行的工具不能据此视为完成。源码加载用 `paseo plugin reload`，无需为此重启整个 Daemon。
 
 CLI 更新请求超时或连接中断时，先核对 Daemon 的实际结果，不立即重装：
 
 ```bash
 paseo plugin ls --json
 paseo plugin logs paseo-dsh-direct
-paseo provider diagnostic dsh-pi
+paseo provider diagnostic dsh
 ```
 
 `currentRevision` 已是目标版本、插件状态为 `running`，且 Provider 诊断可用，表示安装与发现检查通过；真实对话仍需另测。CLI 等待结束不等于 Daemon 已停止构建，是否重试以插件状态和日志为准。
@@ -97,7 +97,7 @@ git ls-remote --tags origin refs/tags/vX.Y.Z
 Provider 注册了 `command: ["dsh"]`，也可以在 Paseo 配置里覆盖，不必设环境变量：
 
 ```json
-{ "agents": { "providers": { "dsh-pi": { "command": ["/opt/dsh/bin/dsh"], "env": { "DSH_HOME": "/srv/dsh" } } } } }
+{ "agents": { "providers": { "dsh": { "command": ["/opt/dsh/bin/dsh"], "env": { "DSH_HOME": "/srv/dsh" } } } } }
 ```
 
 `dsh` 的选择顺序：`PASEO_DSH_EXECUTABLE`，设置页的 `dsh executable`，Paseo 解析出的 `command`，`PATH` 里的 `dsh`。环境变量和 Paseo 配置的改动需重启 Daemon。Windows 上 npm 生成的 `dsh.cmd` / `dsh.ps1` 和 DSH Desktop 注册的 `dsh` 都能用；只装了 DSH Desktop 时不必另装 dsh，`PATH` 上没有 `dsh` 时插件用 Desktop 默认安装位置自带的 dsh。`PATH` 上的 dsh 优先于 Desktop。

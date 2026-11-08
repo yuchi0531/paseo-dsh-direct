@@ -1,6 +1,6 @@
 # 服务端架构
 
-`paseo-dsh-direct` 注册 Paseo Direct Provider `dsh-pi`，显示为 `DeepSeek Harness`。插件标识为 `paseo-dsh-direct`。服务端入口是 `index.server.ts`；实现位于 `server/`，跨进程契约位于 `shared/`。
+`paseo-dsh-direct` 注册 Paseo Direct Provider `dsh`，显示为 `DeepSeek Harness`。插件标识为 `paseo-dsh-direct`。服务端入口是 `index.server.ts`；实现位于 `server/`，跨进程契约位于 `shared/`。
 
 ## 运行边界
 
@@ -32,7 +32,7 @@ Provider 注册 `command: ["dsh"]` 与 `status()`（Paseo 0.11 及以上调用�
 
 ### dsh 的选择
 
-Paseo 在 `status` 与 `connect` 请求里带 `launch`（`command`、`args`、`env`）：`command` 是 Daemon 解析后的可执行路径，默认值来自注册的 `command`，可被 Paseo 配置 `agents.providers.dsh-pi.command` 与 `env` 覆盖；`env` 是 Daemon 持有的完整环境（含覆盖项，已去掉父会话变量）。旧版 Daemon 或独立调用不带 `launch`。
+Paseo 在 `status` 与 `connect` 请求里带 `launch`（`command`、`args`、`env`）：`command` 是 Daemon 解析后的可执行路径，默认值来自注册的 `command`，可被 Paseo 配置 `agents.providers.dsh.command` 与 `env` 覆盖；`env` 是 Daemon 持有的完整环境（含覆盖项，已去掉父会话变量）。旧版 Daemon 或独立调用不带 `launch`。
 
 `resolveDshLaunch` 按以下顺序选可执行文件：
 
@@ -52,7 +52,7 @@ profile 的顺序是非空的 `PASEO_DSH_PROFILE`、设置页里非空的 `profi
 
 Paseo 在调用插件之前就按 `PATH` 解析注册的 `command`，找不到就报 `dsh not found on PATH`。所以 Windows 上 `PATH` 里没有 `dsh`、而 Desktop 装在默认位置 `%LOCALAPPDATA%\Programs\DeepSeek Harness` 时，插件加载时注册的 `command` 是 Desktop 的 `DeepSeek Harness.exe`（`defaultDshCommand`），否则是 `dsh`。不经 Paseo 解析的启动（没有 `launch`）同样在 `dsh` 找不到时回退到这个位置。`PATH` 上的 dsh 始终优先于 Desktop。其余情况（`.exe` 等真实可执行文件、识别不出的布局）原样透传。不用 `shell: true`：参数会失去转义，`kill()` 也只杀到 `cmd.exe`。
 
-桥接子进程的环境以 `launch.env` 为底（没有 `launch` 时用 `process.env`），再叠加会话环境变量。`status()` 对同一请求的 `launch` 套用同一顺序，对解析出的命令加参数运行 `--version`，结果按命令与参数缓存，探测使用 `launch.env`。无法运行时返回不可用，并提示安装 dsh、设置 `agents.providers.dsh-pi.command`、在插件设置页填写 `dsh executable` 或设置 `PASEO_DSH_EXECUTABLE`，然后重启 Daemon；`major.minor` 线与插件不一致时返回可用并附与会话时间线相同的警告。
+桥接子进程的环境以 `launch.env` 为底（没有 `launch` 时用 `process.env`），再叠加会话环境变量。`status()` 对同一请求的 `launch` 套用同一顺序，对解析出的命令加参数运行 `--version`，结果按命令与参数缓存，探测使用 `launch.env`。无法运行时返回不可用，并提示安装 dsh、设置 `agents.providers.dsh.command`、在插件设置页填写 `dsh executable` 或设置 `PASEO_DSH_EXECUTABLE`，然后重启 Daemon；`major.minor` 线与插件不一致时返回可用并附与会话时间线相同的警告。
 
 ### 子代理模型设置
 
@@ -120,7 +120,7 @@ stdio 使用按换行分帧的 JSON-RPC 2.0。stdout 承载协议，诊断写入
 - 非 Paseo 发起的 DSH 回合（如 `/goal` 续跑、DSH 在同一运行期内连续消化的排队输入）以 `turn/start` 为起点上报为自主回合，由 `turn/end` 或 agent 转入空闲结束。
 - DSH `permission/preset` 事件（`/permission` 或其他来源）同步更新 Paseo 的权限设置。
 - 斜杠目录通过 `session.commands` 提供，会话打开、回合结束和命令执行后刷新；同名时已注册命令优先于技能。已注册命令经 `session.command` 执行；命令返回时 agent 仍在运行（如 `/plan <消息>`），该命令即作为本次输入的回合上报，否则按不产生回合的命令完成。其 `command/run` 显示为用户输入，`command/done` 的结果文本显示为通知。技能调用作为以 `/<技能名>` 开头的普通用户消息发送，由 DSH 注入技能正文。
-- 协商出 `timeline.plugin` 时，`TimelineProjector` 把计划模式、权限预设和目标变化投影为 Paseo 插件时间线条目（`pluginId` 为 `paseo-dsh-direct`，即 `paseo-plugin.json` 的 id，不是 provider 标识 `dsh-pi`；版本 1；契约与 zod schema 在 `shared/timeline-cards.ts`，客户端渲染见 [客户端架构](client-architecture.md)）。未协商该能力时不发这些条目，也不退化成通知。直播与历史回放走同一个 `projectEvent`，条目 id 由事件 `seq` 派生（`plan-mode:<seq>`、`permission-preset:<seq>`、`goal:<seq>`、`goal-continue:<seq>`），重复回放不产生重复条目。
+- 协商出 `timeline.plugin` 时，`TimelineProjector` 把计划模式、权限预设和目标变化投影为 Paseo 插件时间线条目（`pluginId` 为 `paseo-dsh-direct`，即 `paseo-plugin.json` 的 id，不是 provider 标识 `dsh`；版本 1；契约与 zod schema 在 `shared/timeline-cards.ts`，客户端渲染见 [客户端架构](client-architecture.md)）。未协商该能力时不发这些条目，也不退化成通知。直播与历史回放走同一个 `projectEvent`，条目 id 由事件 `seq` 派生（`plan-mode:<seq>`、`permission-preset:<seq>`、`goal:<seq>`、`goal-continue:<seq>`），重复回放不产生重复条目。
   - `plan-mode` `{active}`：仅当值与投影器已知值不同时发出，初始已知值为关闭。
   - `permission-preset` `{preset}`：投影器见到的第一条 `permission/preset`（会话初始化时必有）只作基线；之后仅在预设变化时发出。
   - `goal` `{operation, objective?, round?, maxRounds?, reason?}`：每个 `goal/change` 操作（create、edit、pause、resume、complete、block、clear）发一条，但 `/goal` 命令执行期间（`command/run` 名为 `goal` 到对应 `command/done` 之间）产生的变更不发：DSH 已在该命令自己的输出里报告了结果（Goal created/updated/paused/resumed/cleared）。模型的 goal 工具和回合驱动器（含 complete、block、自动暂停）产生的变更不在命令执行期间，照常发条目；`objective` 取目标本身，`clear` 取按目标 id 记住的目标，`block` 的 `reason` 取 `blockedReason.message`。来源为 `goal` 且 `round >= 1` 的 `user/message`（目标自动续跑）发 `operation: "continue"`，带记住的目标与上限；`round` 为 0 的初始目标消息不发条目。条目不改变该消息本身的显示与隐藏。

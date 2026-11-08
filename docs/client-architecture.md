@@ -1,6 +1,6 @@
 # 客户端呈现
 
-Provider 在 Paseo 中显示为 `DeepSeek Harness`，标识为 `dsh-pi`。手机、桌面和 Web 使用 Paseo 原生新建对话、时间线、权限与历史导入界面。
+Provider 在 Paseo 中显示为 `DeepSeek Harness`，标识为 `dsh`。手机、桌面和 Web 使用 Paseo 原生新建对话、时间线、权限与历史导入界面。
 
 ## 原生界面
 
