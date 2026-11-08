@@ -140,6 +140,8 @@ export class BridgeService {
   private readonly closing = new Map<string, Promise<void>>();
   private readonly tracked = new Set<string>();
   private readonly parent = new Map<string, string>();
+  /** Child session id -> root session id, for sessions shown as Paseo subagents. */
+  private readonly children = new Map<string, string>();
   private readonly commandAborts = new Map<string, AbortController>();
   private readonly preapproved = new Map<string, ReadonlySet<string>>();
   private readonly interactions = new Map<string, PendingInteraction>();
@@ -164,12 +166,43 @@ export class BridgeService {
     this.subagentSettings = new SubagentSettings(ctx, profile);
     this.subscriptions.push(
       ctx.on("session/created", (session) => {
-        if (session.header.parentSession) {
-          this.parent.set(
-            String(session.id),
-            String(session.header.parentSession),
-          );
-        }
+        if (!session.header.parentSession) return;
+        const childId = String(session.id);
+        const parentId = String(session.header.parentSession);
+        this.parent.set(childId, parentId);
+        if (this.children.has(childId) || this.tracked.has(childId)) return;
+        // Only children of a bridge-owned session become Paseo subagents; a
+        // child whose root is not tracked here belongs to another bridge.
+        const root = this.rootForId(parentId);
+        if (root === undefined) return;
+        this.children.set(childId, root);
+        this.tracked.add(childId);
+        const header = session.header;
+        const cwd =
+          header.cwd ?? this.owned.get(root)?.handle.agent.session.header.cwd ?? "";
+        notify("session.child_open", {
+          sessionId: childId,
+          parentSessionId: parentId,
+          cwd,
+          ...(header.title ? { title: header.title } : {}),
+        });
+      }),
+    );
+    this.subscriptions.push(
+      ctx.on("subagent/end", (info) => {
+        const childId =
+          typeof info?.id === "string" && info.id.length > 0 ? info.id : undefined;
+        if (childId === undefined) return;
+        const root = this.children.get(childId);
+        if (root === undefined) return;
+        this.children.delete(childId);
+        this.tracked.delete(childId);
+        const parentId = this.parent.get(childId) ?? root;
+        this.parent.delete(childId);
+        notify("session.child_close", {
+          sessionId: childId,
+          parentSessionId: parentId,
+        });
       }),
     );
     this.subscriptions.push(
@@ -335,7 +368,7 @@ export class BridgeService {
   /** Publish one tracked session's usage, skipping an unchanged fold. */
   private publishUsage(session: HostSession): void {
     const sessionId = String(session.id);
-    if (!this.tracked.has(sessionId)) return;
+    if (!this.tracked.has(sessionId) || this.children.has(sessionId)) return;
     const usage = this.readUsage(session);
     if (!usage) return;
     const signature = JSON.stringify(usage);
@@ -355,7 +388,7 @@ export class BridgeService {
     let id: string | undefined = sessionId;
     const seen = new Set<string>();
     while (id && !seen.has(id)) {
-      if (this.tracked.has(id)) return id;
+      if (this.tracked.has(id) && !this.children.has(id)) return id;
       seen.add(id);
       id = this.parent.get(id) ??
         (id === agent?.id ? agent.session.header.parentSession : undefined);

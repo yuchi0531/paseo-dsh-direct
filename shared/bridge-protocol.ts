@@ -264,6 +264,24 @@ export interface BridgeNotifications {
   "session.stream": { sessionId: string; frame: DshStreamFrame };
   "session.status": { sessionId: string; status: "idle" | "running" };
   "session.usage": { sessionId: string; usage: BridgeUsage };
+  /**
+   * A DSH child session opened under a session this bridge owns. Paseo shows
+   * these as provider subagents with their own timeline, the way OpenCode's
+   * subagent sessions appear.
+   */
+  "session.child_open": {
+    sessionId: string;
+    /** The direct parent in DSH's session-id namespace. */
+    parentSessionId: string;
+    cwd: string;
+    title?: string;
+    description?: string;
+  };
+  /** The child session settled (or disappeared); Paseo marks the subagent done. */
+  "session.child_close": {
+    sessionId: string;
+    parentSessionId: string;
+  };
   "interaction.request": InteractionRequest;
   "interaction.closed": { requestId: string; sessionId: string };
 }

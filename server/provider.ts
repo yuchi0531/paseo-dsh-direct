@@ -102,6 +102,8 @@ interface SessionState {
   bridge: DshBridge;
   releaseBridgeListeners: Array<() => void>;
   projector: TimelineProjector;
+  /** DSH child sessions published as Paseo subagents, each with its own projector. */
+  children: Map<string, { projector: TimelineProjector }>;
   activeTurnId: string | null;
   cancelRequested: boolean;
   dispatch: Dispatch | null;
@@ -278,12 +280,58 @@ function createConnection(
 function listenToSessionBridge(
   session: SessionState,
   emit: (event: ProviderEvent) => void,
+  capabilities: readonly string[],
 ): Array<() => void> {
   const isCurrentSession = (nativeId: string) =>
     !session.closed && nativeId === session.nativeId;
 
   return [
+    session.bridge.on("session.child_open", ({ sessionId, parentSessionId, cwd, title, description }) => {
+      if (session.closed || session.children.has(sessionId)) return;
+      session.children.set(sessionId, {
+        projector: new TimelineProjector(sessionId, capabilities.includes("timeline.plugin")),
+      });
+      // A child of the root maps to the root's Paseo id; nested children keep
+      // their DSH session id, which is also their Paseo id here.
+      const parentPaseoId = parentSessionId === session.nativeId ? session.paseoId : parentSessionId;
+      emit({
+        type: "session.opened",
+        sessionId,
+        parentSessionId: parentPaseoId,
+        restoration: "parent",
+        capabilities,
+        cwd,
+        ...(title ? { title } : {}),
+        ...(description ? { description } : {}),
+      });
+    }),
+    session.bridge.on("session.child_close", ({ sessionId }) => {
+      if (!session.children.delete(sessionId)) return;
+      emit({ type: "session.closed", sessionId });
+    }),
     session.bridge.on("session.event", ({ sessionId, event, images }) => {
+      const child = session.children.get(sessionId);
+      if (child) {
+        // A child's own timeline: DSH emits the same event vocabulary as a root.
+        session.activityRevision += 1;
+        if (event.type === "turn/start") {
+          emit({ type: "session.turn", sessionId, turnId: `dsh-child-${event.seq}`, state: "started" });
+          return;
+        }
+        if (event.type === "turn/end") {
+          const terminal = classifyTurnEnd(event.data);
+          emit({
+            type: "session.turn",
+            sessionId,
+            turnId: `dsh-child-${event.seq}`,
+            state: terminal.state,
+            ...(terminal.error ? { error: terminal.error } : {}),
+          });
+          return;
+        }
+        for (const projected of child.projector.projectEvent(event)) emit(projected);
+        return;
+      }
       if (!isCurrentSession(sessionId)) return;
       session.activityRevision += 1;
       // The prompt path emits its own bubble with the clientMessageId.
@@ -330,11 +378,18 @@ function listenToSessionBridge(
       for (const image of toolImageMessages(session, event, images ?? [])) emit(image);
     }),
     session.bridge.on("session.stream", ({ sessionId, frame }) => {
+      const child = session.children.get(sessionId);
+      if (child) {
+        for (const projected of child.projector.projectStream(frame)) emit(projected);
+        return;
+      }
       if (!isCurrentSession(sessionId)) return;
       session.activityRevision += 1;
       for (const projected of session.projector.projectStream(frame)) emit(projected);
     }),
     session.bridge.on("session.status", ({ sessionId, status }) => {
+      // A child's running/idle state reaches Paseo through session.turn states.
+      if (session.children.has(sessionId)) return;
       if (!isCurrentSession(sessionId)) return;
       session.activityRevision += 1;
       if (status === "running") {
@@ -348,6 +403,7 @@ function listenToSessionBridge(
       }
     }),
     session.bridge.on("session.usage", ({ sessionId, usage }) => {
+      if (session.children.has(sessionId)) return;
       if (!isCurrentSession(sessionId)) return;
       session.activityRevision += 1;
       emit({
@@ -388,6 +444,10 @@ function failSession(
   if (session.closed) return;
   session.closed = true;
   session.releaseBridgeListeners.forEach((release) => release());
+  for (const childId of session.children.keys()) {
+    emit({ type: "session.closed", sessionId: childId });
+  }
+  session.children.clear();
   for (const permissionId of session.pendingInteractions.keys()) {
     emit({ type: "session.permission_resolved", sessionId: session.paseoId, permissionId });
   }
@@ -552,6 +612,7 @@ async function openSession(
       bridge,
       releaseBridgeListeners: [],
       projector: new TimelineProjector(input.sessionId, state.capabilities.includes("timeline.plugin")),
+      children: new Map(),
       activeTurnId: null,
       cancelRequested: false,
       dispatch: null,
@@ -565,7 +626,7 @@ async function openSession(
       closed: false,
     };
     state.sessions.set(input.sessionId, session);
-    session.releaseBridgeListeners = listenToSessionBridge(session, state.emit);
+    session.releaseBridgeListeners = listenToSessionBridge(session, state.emit, state.capabilities);
     if (!nativeId && input.config.settings[PLAN_MODE_SETTING] === true) {
       await setPlanMode(session, true);
     }
@@ -920,6 +981,10 @@ async function closeSession(
   session.pendingInteractions.clear();
   session.closed = true;
   session.releaseBridgeListeners.forEach((release) => release());
+  for (const childId of session.children.keys()) {
+    state.emit({ type: "session.closed", sessionId: childId });
+  }
+  session.children.clear();
   try {
     await session.bridge.request("session.close", { sessionId: session.nativeId });
   } finally {

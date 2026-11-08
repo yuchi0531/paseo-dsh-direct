@@ -34,6 +34,7 @@ Most dsh integrations go through ACP, a generic protocol that every agent can sp
 - dsh's slash commands (`/compact`, `/plan`, ...) appear in Paseo's `/` menu.
 - Paseo's usage meter shows dsh's token counts and how full the context window is.
 - Goal changes that dsh does not already report in a `/goal` command's own output, plan mode switches and permission preset changes show up in the conversation as small timeline cards.
+- Child sessions dsh creates for subagents appear as Paseo provider subagents, each with its own timeline and status, the way OpenCode's subagent sessions do.
 
 ## Versioning
 

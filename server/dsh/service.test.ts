@@ -1002,3 +1002,42 @@ test("session.read materializes tool-result images onto historical events", asyn
   }
   await f.bridge.shutdown();
 });
+
+test("child sessions publish as provider subagents and close on subagent end", async () => {
+  const f = fixture();
+  await f.bridge.handle("bridge.initialize");
+  await f.bridge.handle("session.open", { cwd: "/tmp", sessionId: "root" });
+
+  const child = {
+    id: "child-1",
+    header: { id: "child-1", createdAt: 2, cwd: "/tmp", parentSession: "root" },
+    snapshotEvents: () => [],
+    requestHeader: () => undefined,
+    append: () => undefined,
+  };
+  f.listener("session/created")(child);
+
+  const opened = f.notifications.find((notice) => notice.method === "session.child_open");
+  assert.deepEqual(opened?.params, {
+    sessionId: "child-1",
+    parentSessionId: "root",
+    cwd: "/tmp",
+  });
+
+  // A child whose parent is not owned by this bridge must not surface.
+  f.listener("session/created")({
+    ...child,
+    id: "orphan",
+    header: { id: "orphan", createdAt: 3, cwd: "/tmp", parentSession: "other-root" },
+  });
+  assert.equal(
+    f.notifications.filter((notice) => notice.method === "session.child_open").length,
+    1,
+  );
+
+  f.listener("subagent/end")({ runId: "run-1", id: "child-1" });
+  const closed = f.notifications.find((notice) => notice.method === "session.child_close");
+  assert.deepEqual(closed?.params, { sessionId: "child-1", parentSessionId: "root" });
+
+  await f.bridge.shutdown();
+});
