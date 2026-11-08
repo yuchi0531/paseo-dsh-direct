@@ -34,16 +34,19 @@ export default function contribute(server: PluginServerContext) {
     await refreshLaunch(paseo);
     return subagents.save(input);
   });
-  server.registerProvider(
-    createDshProvider({
-      configured,
-      observeLaunch: (launch) => { providerLaunch = launch; },
-      command: defaultDshCommand(process.env),
-      createBridge: async (launch) => {
-        const { executable, profile } = await configured();
-        return launchDshBridge({ ...launch, bridgeSource: DSH_BRIDGE_SOURCE, executable, profile });
-      },
-    }),
-  );
+  const registration = createDshProvider({
+    configured,
+    observeLaunch: (launch) => { providerLaunch = launch; },
+    command: defaultDshCommand(process.env),
+    createBridge: async (launch) => {
+      const { executable, profile } = await configured();
+      return launchDshBridge({ ...launch, bridgeSource: DSH_BRIDGE_SOURCE, executable, profile });
+    },
+  });
+  server.registerProvider(registration);
+  // Permanent compatibility alias: agents recorded before the dsh rename keep
+  // their dsh-pi provider id forever, so new work uses dsh while old sessions
+  // still open. The alias shares the same provider, catalog and bridge.
+  server.registerProvider({ ...registration, id: "dsh-pi", label: "DeepSeek Harness (legacy dsh-pi)" });
   return () => subagents.dispose();
 }
